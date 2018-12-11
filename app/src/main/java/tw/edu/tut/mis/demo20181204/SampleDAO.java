@@ -34,21 +34,22 @@ public class SampleDAO {
     // 取出sample資料表所有資料
     // 類似 select * from sample
     public List<Sample> getAll(){
-        Cursor rr = mDB.query("sample", null, null, null, null, null, null, null);
+        //Cursor rr = mDB.query("sample", null, null, null, null, null, null, null);
                                             //後面有7個null
-        List<Sample> ret = new ArrayList<>();
+        Cursor rr = mDB.rawQuery("select * from sample", null);
+        List<Sample> list = new ArrayList<>();
 
         while( rr.moveToNext() ){
             Sample r = new Sample();
-            //rr.getLong(0)         //_id
+            r.setID( rr.getLong(0) );          //_id
             r.setName( rr.getString(1) );      //name
             r.setTEL( rr.getString(2) );       //tel
             r.setAddress( rr.getString(3) );   //address
-            ret.add(r);
+            list.add(r);
         }
 
         rr.close();
-        return ret;
+        return list;
     }
 
 
