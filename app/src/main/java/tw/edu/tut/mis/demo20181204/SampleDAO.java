@@ -1,5 +1,6 @@
 package tw.edu.tut.mis.demo20181204;
 
+import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
@@ -30,6 +31,42 @@ public class SampleDAO {
         mDB = DBHelper.getDB(ctx);
     }
 
+
+    //加入一筆資料到資料表的動作
+    //insert into sample (欄位) value (值)
+    public void add(Sample data){
+        ContentValues cv = new ContentValues();
+        cv.put( "name",    data.getName()    );
+        cv.put( "tel",     data.getTEL()     );
+        cv.put( "address", data.getAddress() );
+
+        long id = mDB.insert("sample", null, cv);
+
+        data.setID(id); //更新資料物件中的 ID
+    }
+
+
+    //更動資料表中某個 _id 的內容
+    //update sample set 欄位=值, 欄位=值, 欄位=值.... where 條件
+    public boolean update(Sample data){
+        ContentValues cv = new ContentValues();
+        cv.put( "name",    data.getName()    );
+        cv.put( "tel",     data.getTEL()     );
+        cv.put( "address", data.getAddress() );
+        String where = "_id="+data.getID();
+
+        int row_affect = mDB.update("sample", cv, where, null );
+        return  row_affect > 0;
+    }
+
+
+    //刪除資料表中某個 _id 的內容
+    //delete from sample where 條件
+    public boolean delete(long id){
+        String where = "_id="+id;
+        int row_affect = mDB.delete("sample", where, null );
+        return  row_affect > 0;
+    }
 
     // 取出sample資料表所有資料
     // 類似 select * from sample
