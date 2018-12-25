@@ -11,6 +11,7 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Adapter;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 import android.widget.TextView;
@@ -35,6 +36,8 @@ public class MainActivity extends AppCompatActivity {
 
         mSampleDAO = new SampleDAO(this);
         List<Sample> list = mSampleDAO.getAll();
+
+        // ListView <== SwipeActionAdapter( Adapter ) <---> List
 
         mAdapter = new SampleAdapter(this, R.layout.sample_list_item, list);
         mSwipeAdapter = new SwipeActionAdapter(mAdapter);
@@ -62,6 +65,41 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onSwipe(int[] position, SwipeDirection[] direction) {
+//              for (int i=0; i<position.length; i=i+1) {
+                //處理第 0 筆
+                if (position.length>0) {
+                    int pos = position[0];
+                    SwipeDirection dir = direction[0];
+
+                    // if (dir==SwipeDirection.DIRECTION_NORMAL_LEFT) { }
+
+                    if (dir==SwipeDirection.DIRECTION_FAR_LEFT) {  //往左滑 較遠 => 刪除
+                        Sample data = mAdapter.getItem(pos);
+                        boolean success;
+                        success = mSampleDAO.delete( data.getID() );
+                        if ( success ) { //刪除成功
+                            mAdapter.remove(data);
+                        }
+                    }
+
+                    //if (dir==SwipeDirection.DIRECTION_NORMAL_RIGHT) { }
+
+                    if (dir==SwipeDirection.DIRECTION_FAR_RIGHT) { //往右滑 較遠 => 進入編輯
+                        Sample data = mAdapter.getItem(pos);
+                        Bundle bd = new Bundle();
+                        bd.putInt("Mode", 2); //假設 1代表新增 2代表編輯
+                        bd.putLong(  "id",      data.getID()      );
+                        bd.putString("name",    data.getName()    );
+                        bd.putString("tel",     data.getTEL()     );
+                        bd.putString("address", data.getAddress() );
+                        bd.putInt("偷帶", pos);
+
+                        Intent it = new Intent(MainActivity.this, AddEditActivity.class);
+                        it.putExtras(bd);
+
+                        startActivityForResult(it, REQUEST_CODE_EDIT );
+                    }
+                }
 
             }
         });
@@ -80,6 +118,29 @@ public class MainActivity extends AppCompatActivity {
                 startActivityForResult(it, REQUEST_CODE_ADD );
             }
         });
+
+
+        //點選清單
+        lv.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                Sample data = (Sample)parent.getItemAtPosition(position);
+                //.....
+                //data.getTEL()
+            }
+        });
+
+        //長按清單
+        lv.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
+            @Override
+            public boolean onItemLongClick(AdapterView<?> parent, View view, int position, long id) {
+                Sample data = (Sample)parent.getItemAtPosition(position);
+                //.....
+
+                return true; //....
+            }
+        });
+
 
     }
 
@@ -110,18 +171,24 @@ public class MainActivity extends AppCompatActivity {
             if (resultCode==Activity.RESULT_OK) { //離開頁面時，按的是 OK/Save/Confirm
                 //取得填寫頁面的輸入值
                 Bundle bd = data.getExtras();
-                //建立要新增的資料物件
+                //取得要編輯的資料物件
                 Sample dddd = new Sample();
                 dddd.setID(      bd.getLong("id")       );
                 dddd.setName(    bd.getString("name")   );
                 dddd.setTEL(     bd.getString("tel")    );
                 dddd.setAddress( bd.getString("address") );
                 //處理更新到資料庫的動作
-                mSampleDAO.update( dddd );     //dddd物件中的id會更新
+                boolean success;
+                success = mSampleDAO.update( dddd );     //dddd物件中的id會更新
                 //更新ListView
-                //????????
-                //??????
-                //??????
+                if (success) {
+                    int pos = bd.getInt("偷帶");
+                    Sample old = mAdapter.getItem(pos);
+                    old.setName(    dddd.getName()    );
+                    old.setTEL(     dddd.getTEL()     );
+                    old.setAddress( dddd.getAddress() );
+                    mAdapter.notifyDataSetChanged();  //通知說資料有變
+                }
             }
         }
     }
